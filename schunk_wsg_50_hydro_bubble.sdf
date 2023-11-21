@@ -15,7 +15,7 @@
     Origin:
       (0, 0, 0) at the bottom center of the gripper body.
     -->
-    <link name="gripper">
+    <link name="body">
       <pose>0 0 0 0 0 0</pose>
       <inertial>
         <mass>0.988882</mass>
@@ -45,10 +45,10 @@
       </visual>
     </link>
     <frame name="body_frame">
-      <pose relative_to="gripper">0 0 0 0 0 0</pose>
+      <pose relative_to="body">0 0 0 0 0 0</pose>
     </frame>
     <frame name="grasp_frame">
-      <pose relative_to="gripper">0 0 -0.1725 0 0 0</pose>
+      <pose relative_to="body">0 0 -0.1725 0 0 0</pose>
     </frame>
     <link name="left_finger_bubble">
       <pose>0 0 -0.0725 0 0 0</pose>
@@ -200,7 +200,7 @@
       </inertial>
     </link>
     <joint name="left_finger_sliding_joint" type="prismatic">
-      <parent>gripper</parent>
+      <parent>body</parent>
       <child>left_finger_bubble</child>
       <pose>0 0 0 0 0 0</pose>
       <axis>
@@ -221,7 +221,7 @@
       <pose>0 0 0 0 0 0</pose>
     </joint>
     <joint name="right_finger_sliding_joint" type="prismatic">
-      <parent>gripper</parent>
+      <parent>body</parent>
       <child>right_finger_bubble</child>
       <pose>0 0 0 0 0 0</pose>
       <axis>
