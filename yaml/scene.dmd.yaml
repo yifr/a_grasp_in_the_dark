@@ -1,0 +1,10 @@
+
+directives:
+- add_model:
+    name: table
+    file: "file:///home/aryan/Projects/Manipulation/a_grasp_in_the_dark/sdf/table.sdf"
+
+- add_model:
+    name: solid_box
+    file: "file:///home/aryan/Projects/Manipulation/a_grasp_in_the_dark/sdf/solid_box.sdf"
+
