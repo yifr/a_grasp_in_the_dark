@@ -16,7 +16,7 @@
       (0, 0, 0) at the bottom center of the gripper body.
     -->
     <link name="body">
-      <pose>0 0 0 0 0 0</pose>
+      <pose>0 -0.049133 0 0 0 0</pose>
       <inertial>
         <mass>0.988882</mass>
         <inertia>
@@ -27,10 +27,10 @@
           <iyz>0</iyz>
           <izz>0.164814</izz>
         </inertia>
-        <pose>0 0 0 0 0 0</pose>
+      <pose>0 -0.049133 0 0 0 0</pose>
       </inertial>
       <visual name="body mesh">
-        <pose>0 0 -0.036 -1.5708 0 -1.5708</pose>
+      <pose>0 -0.049133 0 0 0 0</pose>
         <geometry>
           <mesh>
             <uri>package://drake_models/wsg_50_description/meshes/wsg_body.obj</uri>
