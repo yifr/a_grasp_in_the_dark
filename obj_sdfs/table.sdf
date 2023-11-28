@@ -18,7 +18,7 @@
           <pose>0 0 0 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>file:///home/aryan/Projects/Manipulation/a_grasp_in_the_dark/objects/table.obj</uri>
+              <uri>file:///home/aryan/Projects/Manipulation/a_grasp_in_the_dark/OBJs/table.obj</uri>
             </mesh>
           </geometry>
         </visual>
@@ -31,6 +31,7 @@
           <drake:proximity_properties>
             <drake:compliant_hydroelastic/>
             <drake:hydroelastic_modulus>1.0e8</drake:hydroelastic_modulus>
+            ]
           </drake:proximity_properties>
         </collision>
       </link>
