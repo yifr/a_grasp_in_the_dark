@@ -171,6 +171,9 @@ def build_scenario():
         - add_weld:
             parent: world
             child: iiwa::iiwa_link_0
+            X_PC:
+                translation: [-0.1, 0, 0]
+                rotation: !Rpy { deg: [0, 0, 0]}
         - add_model:
             name: allegro
             file: file://""" + gripper + """
@@ -179,7 +182,7 @@ def build_scenario():
             child: allegro::hand_root
             X_PC:
                 translation: [0, 0, 0.05]
-                rotation: !Rpy { deg: [0, -90, 0]}
+                rotation: !Rpy { deg: [0, -70, 0]}
         # And now the environment:
         - add_model:
             name: foam_brick
@@ -194,7 +197,7 @@ def build_scenario():
             parent: world
             child: robot_table::link
             X_PC:
-                translation: [0, 0, -0.7645]
+                translation: [-0.1, 0, -0.7645]
         - add_model:
             name: work_table
             file: file://""" + table_top + """
