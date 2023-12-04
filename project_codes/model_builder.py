@@ -179,14 +179,14 @@ def build_scenario():
             child: allegro::hand_root
             X_PC:
                 translation: [0, 0, 0.05]
-                rotation: !Rpy { deg: [0, 0, 0]}
+                rotation: !Rpy { deg: [0, -90, 0]}
         # And now the environment:
         - add_model:
             name: foam_brick
             file: file://""" + foam_brick + """
             default_free_body_pose:
                 base_link:
-                    translation: [0.6, 0, 0]
+                    translation: [0.8, 0, 0]
         - add_model:
             name: robot_table
             file: file://""" + table_top + """

@@ -45,7 +45,7 @@ class AllegroHand:
                             "index_0": 8,
                             "index_1": 9,
                             "index_2": 10,
-                            "thumb_": 11,
+                            "thumb_0": 11,
                             "thumb_1": 12, 
                             "thumb_revolute_z": 11,
                             "thumb_revolute_y": 12, # avoid
@@ -60,6 +60,9 @@ class AllegroHand:
                             "pinky_1": 21,
                             "pinky_2": 22
                         }
+
+    def get_limbs(self):
+        return self.station_map.keys()
 
     def get_state(self, context=None):
         if not context:
@@ -92,10 +95,10 @@ class AllegroHand:
         state = self.get_state(context)
         positions = []
         for limb in limbs:
-            if limb not in self.allegro_map:
+            if limb not in self.station_map:
                 print("Could not find limb titled: " + limb)
                 continue
-            limb_idx = self.allegro_map[limb]
+            limb_idx = self.station_map[limb]
             positions.append(state[limb_idx])
         
         return positions
