@@ -671,6 +671,10 @@
             <size>0.0196 0.0275 0.0164</size>
           </box>
         </geometry>
+        <drake:proximity_properties>
+          <drake:compliant_hydroelastic/>
+          <drake:hydroelastic_modulus>1.0e5</drake:hydroelastic_modulus>
+        </drake:proximity_properties>
       </collision>
       <visual name="link_8_visual">
         <geometry>
@@ -716,6 +720,10 @@
             <size>0.0196 0.0275 0.054</size>
           </box>
         </geometry>
+        <drake:proximity_properties>
+          <drake:compliant_hydroelastic/>
+          <drake:hydroelastic_modulus>1.0e5</drake:hydroelastic_modulus>
+        </drake:proximity_properties>
       </collision>
       <visual name="link_9_visual">
         <geometry>
@@ -761,6 +769,10 @@
             <size>0.0196 0.0275 0.0384</size>
           </box>
         </geometry>
+        <drake:proximity_properties>
+          <drake:compliant_hydroelastic/>
+          <drake:hydroelastic_modulus>1.0e5</drake:hydroelastic_modulus>
+        </drake:proximity_properties>
       </collision>
       <visual name="link_10_visual">
         <geometry>
