@@ -189,7 +189,7 @@ def build_scenario():
             file: file://""" + foam_brick + """
             default_free_body_pose:
                 base_link:
-                    translation: [0.8, 0, 0]
+                    translation: [0.65, 0.2, 0]
         - add_model:
             name: robot_table
             file: file://""" + table_top + """
