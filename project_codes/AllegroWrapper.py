@@ -111,3 +111,10 @@ class AllegroHand:
         
         self.set_state(new_state, context)
         return
+
+    def reset_arm(self):
+        station = self.station
+        context = self.context
+        simulator = self.simulator
+        station.GetInputPort("iiwa+allegro.desired_state").FixValue(context, x0)
+        simulator.AdvanceTo(context.get_time() + 1)

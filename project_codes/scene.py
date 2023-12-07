@@ -81,10 +81,10 @@ def init_scenario(brick_location=None, meshcat=None):
         meshcat = StartMeshcat()
     
     if brick_location is None:
-        table_xmin = 0.5
-        table_xmax = 0.8
-        table_ymin = -0.2
-        table_ymax = 0.2
+        table_xmin = 0.4
+        table_xmax = 0.6
+        table_ymin = -0.4
+        table_ymax = 0.4
         x = np.random.uniform(table_xmin, table_xmax)
         y = np.random.uniform(table_ymin, table_ymax)
         z = 0
@@ -112,7 +112,7 @@ def init_scenario(brick_location=None, meshcat=None):
             parent: world
             child: iiwa::iiwa_link_0
             X_PC:
-                translation: [-0.1, 0, 0]
+                translation: [0.1, 0, 0]
                 rotation: !Rpy { deg: [0, 0, 0]}
         - add_model:
             name: allegro
