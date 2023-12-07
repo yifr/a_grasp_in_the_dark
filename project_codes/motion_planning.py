@@ -7,6 +7,7 @@ from pydrake.all import (
 from pydrake.multibody import inverse_kinematics
 import contact
 
+
 def interpolate_locations(current_location, new_location, X_robot_W, interp_steps=16, arc_height=0.5):
     # NOTE: Convert positions to RigidTransforms
     """
@@ -130,4 +131,5 @@ def move_arm(simulator, station, context, end_effector_poses, time_interval=0.4,
                 break
             else:
                 obj_touched = False
+                
     return obj_touched, current_contact

@@ -76,7 +76,7 @@ from pydrake.multibody import inverse_kinematics
 import copy
 
 
-def init_scenario(brick_location=None, meshcat=None):
+def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
     if meshcat is None:
         meshcat = StartMeshcat()
     
@@ -89,6 +89,9 @@ def init_scenario(brick_location=None, meshcat=None):
         y = np.random.uniform(table_ymin, table_ymax)
         z = 0
         brick_location = [x, y, z] 
+
+    if brick_rotation is None:
+        brick_rotation = [0, np.random.randint(0, 360), 0]
 
     allegro_hand = "../gripper_sdfs/allegro_hand_description_right.sdf"
 
@@ -130,6 +133,7 @@ def init_scenario(brick_location=None, meshcat=None):
             default_free_body_pose:
                 base_link:
                     translation: """ + str(brick_location) + """
+                    rotation: !Rpy { deg: """ + str(brick_rotation) + """}
         - add_model:
             name: robot_table
             file: file://""" + table_top + """
@@ -160,4 +164,4 @@ def init_scenario(brick_location=None, meshcat=None):
     station.GetInputPort("iiwa+allegro.desired_state").FixValue(context, x0)
     simulator.AdvanceTo(0.1)
 
-    return meshcat, station, simulator, context, brick_location
+    return meshcat, station, simulator, context, brick_location, brick_rotation
