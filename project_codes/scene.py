@@ -91,7 +91,7 @@ def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
         brick_location = [x, y, z] 
 
     if brick_rotation is None:
-        brick_rotation = [0, np.random.randint(0, 360), 0]
+        brick_rotation = [0, 0, np.random.randint(0, 360)]
 
     allegro_hand = "../gripper_sdfs/allegro_hand_description_right.sdf"
 

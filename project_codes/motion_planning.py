@@ -131,5 +131,5 @@ def move_arm(simulator, station, context, X_robot_W, end_effector_poses, time_in
                 break
             else:
                 obj_touched = False
-                
+
     return obj_touched, current_contact

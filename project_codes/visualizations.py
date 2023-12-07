@@ -25,5 +25,4 @@ def plot_2d_search(all_touched_points, x, y, probs):
             plt.scatter(t[0], t[1], marker="*", c="red", linewidths=5)
     # legend the two star points
     plt.legend(["Touched", "Current"])
-    plt.show()
-    plt.close()
+    return fig
