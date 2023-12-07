@@ -101,7 +101,7 @@ def optimize_arm_movement(robot_state, station, end_effector_poses, frame="iiwa_
     
 
 
-def move_arm(simulator, station, context, end_effector_poses, time_interval=0.4, frame="iiwa_link_6"):
+def move_arm(simulator, station, context, X_robot_W, end_effector_poses, time_interval=0.4, frame="iiwa_link_6"):
     """
     Move the arm to a new location. If the arm is in contact with an object, stop moving.
     @param: robot_state (numpy array): Allegro wrapper with current robot state.
@@ -125,7 +125,7 @@ def move_arm(simulator, station, context, end_effector_poses, time_interval=0.4,
         for i in range(simulator_steps):
             simulator.AdvanceTo(context.get_time() + time_interval / simulator_steps)
             # Check for contact
-            current_contact = contact.get_contacts(station, context)
+            current_contact = contact.get_contacts(station, context, X_robot_W)
             if len(current_contact) > 0:
                 obj_touched = contact.evaluate_contact(current_contact)
                 break

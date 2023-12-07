@@ -26,14 +26,15 @@ def get_table_contact(X_robot_W, final_height = -0.2, num_knot_points=15):
     return p_list
 
 
-def get_contacts(station, context):
+def get_contacts(station, context, X_robot_W):
     # simulator = Simulator(station)
     # simulator.AdvanceTo(0.1)
+    robot_position = X_robot_W.translation()
     contacts = []
     contact = station.GetOutputPort("contact_results").Eval(context)
     num_contacts = contact.num_point_pair_contacts()
     for i in range(num_contacts):
-        contacts.append(contact.point_pair_contact_info(i).contact_point())
+        contacts.append(contact.point_pair_contact_info(i).contact_point() + robot_position)
     return np.array(contacts)
 
 
