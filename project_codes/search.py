@@ -4,15 +4,53 @@ import numpy as np
 def normalize(v):
     return v / np.sum(v)
 
-def sample_new_target(prev_touch, p_grid, target_bias=None, 
-                    xmin=0.3, xmax=0.6, ymin=-0.3, ymax=0.3, grid_size=15,
-                    object_r=0.2):
+
+def update_target_bias(previous_contacts, initial_bias):
+    """
+    Update the estimate of the object location based on previous contacts.
+
+    Args:
+        previous_contacts (set): Set of 3D coordinates of the previous touches.
+        initial_bias (np.array): Initial [mean_x, mean_y, std_x, std_y] for the target bias.
+
+    Returns:
+        np.array: Updated [mean_x, mean_y, std_x, std_y] for the target bias.
+    """
+    if not previous_contacts:
+        return initial_bias
+
+    # Convert previous contacts to a numpy array
+    contacts = np.array(list(previous_contacts))[:, :2]  # Assuming contacts are 2D points
+
+    # Calculate the new mean as the average of previous contacts
+    new_mean = np.mean(contacts, axis=0)
+
+    # Calculate the new standard deviation
+    # This could be the standard deviation of the contacts, 
+    # or a combination of initial std and contacts std
+    new_std = np.std(contacts, axis=0)
+    if initial_bias is not None:
+        # Weighted average of the initial std and new std
+        initial_std = np.array(initial_bias[2:])
+        new_std = (new_std + initial_std) / 2
+
+    # Combine new mean and std into the updated bias
+    updated_bias = np.array([new_mean[0], new_mean[1], new_std[0], new_std[1]])
+
+    return updated_bias
+
+
+def sample_new_target(p_WG, p_WCs, target_bias=None, 
+                    xmin=0.4, xmax=0.75, ymin=-0.35, ymax=0.35, 
+                    grid_size=20,
+                    search_radius=0.01,
+                    object_r=0.01):
     """
         Proposes a new location to reach with the hand.
         
         Args:
-            prev_touch: np.array: 2D coordinates of the previous touch
-            p_grid: dict: dictionary of probabilities for each location on the table
+            p_WG: current translation of gripper in world frame
+            p_WCs: set: set of 3D coordinates of the previous touches
             target_bias: np.array: [mean_x, mean_y, std_x, std_y] for the target bias
             xmin: float: minimum x coordinate of the table
             xmax: float: maximum x coordinate of the table
@@ -20,49 +58,38 @@ def sample_new_target(prev_touch, p_grid, target_bias=None,
             ymax: float: maximum y coordinate of the table
             grid_size: int: how finely to discretize the table
             object_r: float: radius of the object on the table
+            motion_cost_radius: float: radius of the local neighborhood
         Returns:    
-            next_touch: np.array: 2D coordinates of the next touch
-            p_grid: dict: updated dictionary of probabilities for each location on the table
+            new_target: np.array: 2D coordinates of the next target
     """
-    effort_ratio = 0.7  # ratio of effort to probability
-    effort_c = 2.0  # effort cost coefficient
-    p_target_c = 2.0
-
-    table_x_bounds = [xmin, xmax]
-    table_y_bounds = [ymin, ymax]
-
-    if len(list(p_grid.keys())) == 0:
-        p_grid = {}
-        for x in np.linspace(table_x_bounds[0], table_x_bounds[1], grid_size):
-            for y in np.linspace(table_y_bounds[0], table_y_bounds[1], grid_size):
-                p_grid[(x, y)] = 0.5
-
-    all_p = []
-    all_effort = []
-    all_dist = []
-    table_grid = {}
-    for coord, prob in p_grid.items():
-        dist = np.linalg.norm(np.array(coord) - prev_touch)
-        if dist < object_r:
-            p_target = 0.0
-        else:
-            c_dist = dist - object_r
-            p_target = 1 - np.exp(-p_target_c * c_dist)
-        new_p_target = prob * p_target
-        if new_p_target == 0.0:
-            effort_cost = 0.0
-        else:
-            effort_cost = np.exp(-effort_c * c_dist)
-        p_grid[coord] = new_p_target
-        all_effort.append(effort_cost)
-        all_p.append(new_p_target)
-        all_dist.append(dist)
-    all_effort_norm = normalize(all_effort)
-    all_p_norm = normalize(all_p)
-    for i, coord in enumerate(p_grid.keys()):
-        table_grid[coord] = all_p_norm[i] * (1 - effort_ratio) + all_effort_norm[i] * effort_ratio
-    table_grid_norm = normalize(list(table_grid.values()))
-    next_touch_idx = np.random.choice(np.arange(len(list(table_grid.keys()))), p=table_grid_norm)
-    next_touch = list(p_grid.keys())[next_touch_idx]
+    # Create a grid over the table
+    x = np.linspace(xmin, xmax, grid_size)
+    y = np.linspace(ymin, ymax, grid_size)
+    grid = np.array(np.meshgrid(x, y)).T.reshape(-1, 2)
     
-    return next_touch, p_grid
+    # Exclude points that are within object radius of previous contacts
+    exclusion_zone = object_r + search_radius
+    for contact in p_WCs:
+        contact = contact[:2]  # Assuming contacts are 2D points
+        distance = np.linalg.norm(grid - contact, axis=1)
+        grid = grid[distance > exclusion_zone]
+
+    # Apply target bias if available
+    if target_bias is not None:
+        mean_x, mean_y, std_x, std_y = target_bias
+        weights = np.exp(-((grid[:, 0] - mean_x)**2 / (2 * std_x**2) + (grid[:, 1] - mean_y)**2 / (2 * std_y**2)))
+    else:
+        weights = np.ones(len(grid))
+
+    # Prioritize points closer to the current gripper position
+    distances_to_gripper = np.linalg.norm(grid - p_WG[:2], axis=1)
+    weights /= distances_to_gripper
+
+    # Normalize weights
+    weights /= weights.sum()
+
+    # Choose a new target point based on the weights
+    new_target_idx = np.random.choice(len(grid), p=weights)
+    new_target = grid[new_target_idx]
+
+    return new_target, weights

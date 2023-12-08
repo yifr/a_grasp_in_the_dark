@@ -42,14 +42,15 @@ def get_contacts(station, context):
     return np.array(contacts)
 
 
-def evaluate_contact(p_WC, threshold=0.0001):
+def evaluate_contact(p_WC, table_height=0, threshold=0.001):
     """
     Determine if contact is likely an object or the table
     """
     # find the min difference between z values
-    z_diff = np.max(p_WC[:, 2])
-    # print(z_diff)
-    if z_diff < threshold:
+    p_WCs = np.array(list(p_WC))
+    z_diff = np.max(p_WCs[:, 2])
+
+    if z_diff < table_height + threshold:
         object_touched = "table"
     else:
         object_touched = "object"

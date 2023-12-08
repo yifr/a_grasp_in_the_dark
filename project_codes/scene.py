@@ -3,7 +3,10 @@ import pydot
 import numpy as np
 from pydrake.all import (
     Simulator,
+    DiagramBuilder,
     StartMeshcat,
+    MeshcatVisualizer,
+    MeshcatVisualizerParams
 )
 from IPython.display import SVG, display
 from manipulation.station import MakeHardwareStation, load_scenario
@@ -57,7 +60,7 @@ def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
             child: allegro::hand_root
             X_PC:
                 translation: [0, 0, 0.05]
-                rotation: !Rpy { deg: [0, -70, 0]}
+                rotation: !Rpy { deg: [0, -90, 0]}
         # And now the environment:
         - add_model:
             name: foam_brick
