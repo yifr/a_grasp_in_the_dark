@@ -20,9 +20,13 @@ def plot_2d_search(all_touched_points, x, y, probs):
     # show the touched point with a star
     for i, t in enumerate(all_touched_points):
         if i < len(all_touched_points) - 1:
-            plt.scatter(t[0], t[1], marker="x", c="black", linewidths=5)
+            plt.scatter(t[0], t[1], marker="^", c="orange", label="previous", linewidths=5)
         else:
-            plt.scatter(t[0], t[1], marker="*", c="red", linewidths=5)
+            plt.scatter(t[0], t[1], marker="*", c="red", label="current", linewidths=5)
+
     # legend the two star points
-    plt.legend(["Touched", "Current"])
+    # Zip legend values:
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
     return fig

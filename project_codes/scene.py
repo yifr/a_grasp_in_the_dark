@@ -1,90 +1,22 @@
+import os
+import pydot
 import numpy as np
-import pydot
-import os
-from IPython.display import SVG, display
 from pydrake.all import (
-    AddMultibodyPlantSceneGraph,
-    DiagramBuilder,
-    InverseDynamicsController,
-    LeafSystem,
-    MeshcatVisualizer,
-    MultibodyPlant,
-    Parser,
     Simulator,
     StartMeshcat,
-    RotationMatrix,
-    StateInterpolatorWithDiscreteDerivative,
-    ConstantVectorSource,
-    DiagramBuilder,
-    MeshcatVisualizer,
-    MeshcatVisualizerParams,
-    MultibodyPlant,
-    Parser,
-    PiecewisePolynomial,
-    PiecewiseQuaternionSlerp,
-    RigidTransform,
-    RollPitchYaw,
-    RotationMatrix,
-    Simulator,
-    Solve,
-    StartMeshcat,
-    TrajectorySource,
 )
-from manipulation.station import MakeHardwareStation, load_scenario
-from manipulation.scenarios import AddMultibodyTriad, MakeManipulationStation
-from manipulation.meshcat_utils import AddMeshcatTriad
-from pydrake.multibody import inverse_kinematics
-import copy
-
-def old_scenario():
-    import numpy as np
-import pydot
-import os
 from IPython.display import SVG, display
-from pydrake.all import (
-    AddMultibodyPlantSceneGraph,
-    DiagramBuilder,
-    InverseDynamicsController,
-    LeafSystem,
-    MeshcatVisualizer,
-    MultibodyPlant,
-    Parser,
-    Simulator,
-    StartMeshcat,
-    RotationMatrix,
-    StateInterpolatorWithDiscreteDerivative,
-    ConstantVectorSource,
-    DiagramBuilder,
-    MeshcatVisualizer,
-    MeshcatVisualizerParams,
-    MultibodyPlant,
-    Parser,
-    PiecewisePolynomial,
-    PiecewiseQuaternionSlerp,
-    RigidTransform,
-    RollPitchYaw,
-    RotationMatrix,
-    Simulator,
-    Solve,
-    StartMeshcat,
-    TrajectorySource,
-)
 from manipulation.station import MakeHardwareStation, load_scenario
-from manipulation.scenarios import AddMultibodyTriad, MakeManipulationStation
-from manipulation.meshcat_utils import AddMeshcatTriad
-from pydrake.multibody import inverse_kinematics
-import copy
-
 
 def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
     if meshcat is None:
         meshcat = StartMeshcat()
     
     if brick_location is None:
-        table_xmin = 0.4
-        table_xmax = 0.6
-        table_ymin = -0.4
-        table_ymax = 0.4
+        table_xmin = 0.55
+        table_xmax = 0.75
+        table_ymin = -0.3
+        table_ymax = 0.3
         x = np.random.uniform(table_xmin, table_xmax)
         y = np.random.uniform(table_ymin, table_ymax)
         z = 0
@@ -115,7 +47,7 @@ def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
             parent: world
             child: iiwa::iiwa_link_0
             X_PC:
-                translation: [0.1, 0, 0]
+                translation: [-0.1, 0, 0]
                 rotation: !Rpy { deg: [0, 0, 0]}
         - add_model:
             name: allegro
@@ -165,3 +97,13 @@ def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
     simulator.AdvanceTo(0.1)
 
     return meshcat, station, simulator, context, brick_location, brick_rotation
+
+
+def render_station_diagram(station):
+    display(
+    SVG(
+        pydot.graph_from_dot_data(station.GetGraphvizString(max_depth=1))[
+            0
+        ].create_svg()
+    )
+    )

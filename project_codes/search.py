@@ -5,7 +5,7 @@ def normalize(v):
     return v / np.sum(v)
 
 def sample_new_target(prev_touch, p_grid, target_bias=None, 
-                    xmin=0.4, xmax=0.6, ymin=-0.3, ymax=0.3, grid_size=15,
+                    xmin=0.3, xmax=0.6, ymin=-0.3, ymax=0.3, grid_size=15,
                     object_r=0.2):
     """
         Proposes a new location to reach with the hand.

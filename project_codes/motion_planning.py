@@ -8,41 +8,48 @@ from pydrake.multibody import inverse_kinematics
 import contact
 
 
-def interpolate_locations(current_location, new_location, X_robot_W, interp_steps=16, arc_height=0.5):
-    # NOTE: Convert positions to RigidTransforms
+def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.5):
     """
     Linear interpolation between two 3D coordinates
+
+    Args:
+        X_WG: RigidTransform of the robot before the move
+        p_WG_post: 3D coordinate of the robot after the move
+        interp_steps: number of interpolation steps
+        arc_height: height of the arc to move the robot through
+
+    Returns:
+        coords: RigidTransform of the robot at each interpolation step
     """
-    coords = np.hstack([current_location, new_location])
-    xs = np.linspace(current_location[0], new_location[0], interp_steps)
-    ys = np.linspace(current_location[1], new_location[1], interp_steps)
+    p_WG_pre = X_WG.translation()
+    xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
+    ys = np.linspace(p_WG_pre[1], p_WG_post[1], interp_steps)
 
     # If z-values are the same, move the arm up to avoid dragging along 
-    if current_location[2] == new_location[2]:
-        z0 = np.linspace(current_location[2], current_location[2] + arc_height, interp_steps // 2)
-        z1 = np.linspace(current_location[2] + arc_height, new_location[2], interp_steps // 2)
+    if p_WG_pre[2] == p_WG_post[2]:
+        z0 = np.linspace(p_WG_pre[2], p_WG_pre[2] + arc_height, interp_steps // 2)
+        z1 = np.linspace(p_WG_pre[2] + arc_height, p_WG_post[2], interp_steps // 2)
         zs = np.concatenate([z0, z1])
-
     else:
-        zs = np.linspace(current_location[2], new_location[2], interp_steps)
+        zs = np.linspace(p_WG_pre[2], p_WG_post[2], interp_steps)
     
     interp_coords = np.vstack((xs, ys, zs)).T
-    new_coords = np.vstack([interp_coords, new_location])
+    new_coords = np.vstack([interp_coords, p_WG_post])
 
     pose_list = []
     for i in range(len(new_coords)):
-        pose = RigidTransform(X_robot_W.rotation(), new_coords[i])
+        pose = RigidTransform(X_WG.rotation(), new_coords[i])
         pose_list.append(pose)
         
     return pose_list
 
 
-def optimize_arm_movement(robot_state, station, end_effector_poses, frame="iiwa_link_6"):
+def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"):
     """Convert end-effector pose list to joint position list using series of
     InverseKinematics problems. Note that q is 9-dimensional because the last 2 dimensions
     contain gripper joints, but these should not matter to the constraints.
 
-    @param: robot_state (numpy array): robot_state[i] contains joint position q at index i.
+    @param: X_WG (numpy array): X_WG[i] contains joint position q at index i.
     @param: station (pydrake.systems.framework.DiagramBuilder): DiagramBuilder containing the robot model.
     @param: end_effector_poses (python_list): end_effector_poses[i] contains the desired pose of the end-effector at index i.
     @param: frame (string): name of the frame of the end-effector.
@@ -54,9 +61,7 @@ def optimize_arm_movement(robot_state, station, end_effector_poses, frame="iiwa_
     world_frame = plant.world_frame()
     gripper_frame = plant.GetFrameByName(frame)
 
-    iiwa_initial = robot_state[:7]
-    # gripper_initial = robot_state[7:30]
-    # iiwa_initial = np.array([0.0, 0.1, 0.0, -1.5, 0.0, 0.0, 0.0])
+    iiwa_initial = X_WG[:7]
     gripper_initial = np.ones((23))
     q_nominal = np.concatenate((iiwa_initial, gripper_initial))
 
@@ -82,8 +87,8 @@ def optimize_arm_movement(robot_state, station, end_effector_poses, frame="iiwa_
         pose = end_effector_poses[i]
         AddPositionConstraint(
                     ik,
-                    pose.translation(),
-                    pose.translation(),
+                    pose.translation() - 0.01 * np.ones(3),
+                    pose.translation() + 0.01 * np.ones(3),
         )
     
         prog.AddQuadraticErrorCost(np.identity(len(q_variables)), q_nominal, q_variables)
@@ -92,19 +97,26 @@ def optimize_arm_movement(robot_state, station, end_effector_poses, frame="iiwa_
         else:
             prog.SetInitialGuess(q_variables, q_knots[i-1])
 
-        result = Solve(prog)
+        result_found = False
+        for i in range(100):
+            result = Solve(prog)
+            if result.is_success():
+                result_found = True
+                break
 
-        assert result.is_success()
+        if not result_found:
+            raise RuntimeError("Inverse kinematics failed.")
+
         q_knots.append(result.GetSolution(q_variables))
 
     return np.array(q_knots)
     
 
 
-def move_arm(simulator, station, context, X_robot_W, end_effector_poses, time_interval=0.4, frame="iiwa_link_6"):
+def move_arm(p_WG_post, simulator, station, context, time_interval=0.4, frame="iiwa_link_6"):
     """
     Move the arm to a new location. If the arm is in contact with an object, stop moving.
-    @param: robot_state (numpy array): Allegro wrapper with current robot state.
+    @param: X_WG (numpy array): Allegro wrapper with current robot state.
     @param: simulator (pydrake.systems.analysis.Simulator): Simulator object.
     @param: station (pydrake.systems.framework.DiagramBuilder): DiagramBuilder containing the robot model.
     @param: context (pydrake.systems.framework.Context): Context object.
@@ -114,8 +126,14 @@ def move_arm(simulator, station, context, X_robot_W, end_effector_poses, time_in
 
     @return: The touched object and current contact params
     """    
-    robot_state = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
-    trajectory = optimize_arm_movement(robot_state, station, end_effector_poses, frame=frame)
+    plant = station.GetSubsystemByName("plant")
+    plant_context = plant.GetMyContextFromRoot(context)
+    gripper = plant.GetBodyByName(frame)
+    X_WG = plant.EvalBodyPoseInWorld(plant_context, gripper)
+    end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25)
+
+    X_WG_full = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
+    trajectory = optimize_arm_movement(X_WG_full, station, end_effector_poses, frame=frame)
     arm_trajectory = trajectory[:, :7]
     for state_update in arm_trajectory:
         new_state = station.GetInputPort("iiwa+allegro.desired_state").Eval(context)
@@ -125,7 +143,7 @@ def move_arm(simulator, station, context, X_robot_W, end_effector_poses, time_in
         for i in range(simulator_steps):
             simulator.AdvanceTo(context.get_time() + time_interval / simulator_steps)
             # Check for contact
-            current_contact = contact.get_contacts(station, context, X_robot_W)
+            current_contact = contact.get_contacts(station, context)
             if len(current_contact) > 0:
                 obj_touched = contact.evaluate_contact(current_contact)
                 break
