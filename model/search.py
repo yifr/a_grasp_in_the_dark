@@ -43,8 +43,7 @@ def update_target_bias(previous_contacts, initial_bias):
 def sample_new_target(p_WG, p_WCs, target_bias=None, 
                     xmin=0.4, xmax=0.75, ymin=-0.35, ymax=0.35, 
                     grid_size=20,
-                    search_radius=0.01,
-                    object_r=0.01):
+                    object_area=0.05):
     """
         Proposes a new location to reach with the hand.
         
@@ -57,39 +56,36 @@ def sample_new_target(p_WG, p_WCs, target_bias=None,
             ymin: float: minimum y coordinate of the table
             ymax: float: maximum y coordinate of the table
             grid_size: int: how finely to discretize the table
-            object_r: float: radius of the object on the table
-            motion_cost_radius: float: radius of the local neighborhood
+            object_area: float: size of the object on the table
         Returns:    
             new_target: np.array: 2D coordinates of the next target
     """
     # Create a grid over the table
-    x = np.linspace(xmin, xmax, grid_size)
-    y = np.linspace(ymin, ymax, grid_size)
-    grid = np.array(np.meshgrid(x, y)).T.reshape(-1, 2)
-    
-    # Exclude points that are within object radius of previous contacts
-    exclusion_zone = object_r + search_radius
-    for contact in p_WCs:
-        contact = contact[:2]  # Assuming contacts are 2D points
-        distance = np.linalg.norm(grid - contact, axis=1)
-        grid = grid[distance > exclusion_zone]
+    x_grid = np.linspace(xmin, xmax, grid_size)
+    y_grid = np.linspace(ymin, ymax, grid_size)
+    xx, yy = np.meshgrid(x_grid, y_grid)
+    grid_points = np.vstack([xx.ravel(), yy.ravel()]).T
 
-    # Apply target bias if available
+    # Apply Gaussian distribution if target_bias is given
     if target_bias is not None:
-        mean_x, mean_y, std_x, std_y = target_bias
-        weights = np.exp(-((grid[:, 0] - mean_x)**2 / (2 * std_x**2) + (grid[:, 1] - mean_y)**2 / (2 * std_y**2)))
+        mean = target_bias[:2]
+        std = target_bias[2:]
+        probabilities = np.exp(-0.5 * ((grid_points - mean)**2 / std**2).sum(axis=1))
+        probabilities /= probabilities.sum()
     else:
-        weights = np.ones(len(grid))
+        probabilities = np.ones(grid_size**2) / (grid_size**2)
 
-    # Prioritize points closer to the current gripper position
-    distances_to_gripper = np.linalg.norm(grid - p_WG[:2], axis=1)
-    weights /= distances_to_gripper
+    # Exclude previously visited coordinates
+    for p_WC in p_WCs:
+        distances = np.sqrt(((grid_points - p_WC[:2])**2).sum(axis=1))
+        probabilities[distances < object_area] = 0
 
-    # Normalize weights
-    weights /= weights.sum()
+    # Normalize the probabilities after exclusion
+    probabilities /= probabilities.sum()
 
-    # Choose a new target point based on the weights
-    new_target_idx = np.random.choice(len(grid), p=weights)
-    new_target = grid[new_target_idx]
+    # Sample new target based on the probabilities
+    new_target_index = np.random.choice(grid_size**2, p=probabilities)
+    new_target = grid_points[new_target_index] * [1, -1]
 
-    return new_target, weights
+    return new_target
+

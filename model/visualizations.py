@@ -19,7 +19,7 @@ def plot_2d_search(p_WG, p_WCs, new_target, target_bias, p_W_brick,
     # Generate the grid
     x = np.linspace(xmin, xmax, grid_size)
     y = np.linspace(ymin, ymax, grid_size)
-    X, Y = np.meshgrid(x, y)
+    X, Y = np.meshgrid(y, x)
     grid = np.array([X.flatten(), Y.flatten()]).T
 
     # Calculate weights for each grid point
@@ -30,7 +30,7 @@ def plot_2d_search(p_WG, p_WCs, new_target, target_bias, p_W_brick,
         weights[distance < exclusion_zone] = 0  # Exclude points too close to previous contacts
 
     if target_bias is not None:
-        mean_x, mean_y, std_x, std_y = target_bias
+        mean_y, mean_x, std_y, std_x = target_bias
         weights *= np.exp(-((grid[:, 0] - mean_x)**2 / (2 * std_x**2) + (grid[:, 1] - mean_y)**2 / (2 * std_y**2)))
 
     distances_to_gripper = np.linalg.norm(grid - p_WG[:2], axis=1)
@@ -42,17 +42,22 @@ def plot_2d_search(p_WG, p_WCs, new_target, target_bias, p_W_brick,
     plt.scatter(X, Y, c=weights, cmap='hot', alpha=0.5)  # Colormap for probabilities
     plt.colorbar(label='Probability')
 
-    # Plot previous contacts and current gripper position
-    plt.scatter(*zip(*p_WCs), marker='x', color='red', label='Previous Contacts')
-    plt.scatter(p_WG[0], p_WG[1], marker='o', color='blue', label='Current Gripper Position')
-    plt.scatter(new_target[0], new_target[1], marker='*', color='green', label='New Target', s=150)
-    plt.scatter(p_W_brick[0], p_W_brick[1], marker='s', color='gold', label='Brick', s=200)
+    for p_WC in p_WCs:
+        plt.scatter(p_WC[1], p_WC[0], marker='x', color='red', label="Touched Points", s=100)
 
-    plt.xlim(xmin, xmax)
-    plt.ylim(ymin, ymax)
+    plt.scatter(p_WG[1], p_WG[0], marker='o', color='blue', label='Current Gripper Position')
+    plt.scatter(new_target[1], new_target[0], marker='*', color='green', label='New Target', s=150)
+    plt.scatter(p_W_brick[1], p_W_brick[0], marker='s', color='gold', label='Brick', s=200)
+
+    # Zip legend
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc=(1.25, 0.5))
+
+    plt.xlim(ymin, ymax)
+    plt.ylim(xmin, xmax)
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
     plt.title('Search Algorithm Visualization')
-    plt.legend()
     plt.grid(True)
     plt.show()

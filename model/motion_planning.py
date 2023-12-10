@@ -4,11 +4,12 @@ from pydrake.all import (
     RigidTransform,
     Solve,
 )
+from pydrake.trajectories import PiecewisePolynomial
 from pydrake.multibody import inverse_kinematics
 from scipy import signal
 import contact
 
-def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.5):
+def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.01):
     """
     Linear interpolation between two 3D coordinates with adjustments for smoother motion
 
@@ -23,35 +24,27 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.5):
     """
     p_WG_pre = X_WG.translation()
 
-    # Calculate linear interpolation
-    xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)[1:]
-    ys = np.linspace(p_WG_pre[1], p_WG_post[1], interp_steps)[1:]
-
-    # Check for same z-values and adjust if needed
-    if abs(p_WG_pre[2] - p_WG_post[2]) < 1e-3:
-        # If z-values are practically the same, use a half-circle arc
-        z_center = (p_WG_pre[2] + p_WG_post[2]) / 2
-        z0 = np.linspace(p_WG_pre[2], z_center + arc_height, interp_steps // 2)
-        z1 = np.linspace(z_center + arc_height, p_WG_post[2], interp_steps // 2)
-        zs = np.concatenate([z0, z1])[1:]
+    if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 0.1:
+        # If the z-values are practically the same, move in a square wave
+        # where the robot
+        xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
+        ys = np.linspace(p_WG_pre[1], p_WG_post[1], interp_steps)
+        zs_0 = np.linspace(p_WG_pre[2], arc_height, interp_steps // 2)
+        zs_1 = np.linspace(arc_height, p_WG_post[2], interp_steps // 2)
+        zs = np.concatenate((zs_0, zs_1))
     else:
         # Otherwise, use linear interpolation
-        zs = np.linspace(p_WG_pre[2], p_WG_post[2], interp_steps)[1:]
+        xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
+        ys = np.linspace(p_WG_pre[1], p_WG_post[1], interp_steps)
+        zs = np.linspace(p_WG_pre[2], p_WG_post[2], interp_steps)
 
     # Combine interpolated coordinates
     interp_coords = np.vstack((xs, ys, zs)).T
 
-    # Smooth the trajectory using a low-pass filter
-    # (adjust filter parameters for desired smoothness)
-    b, a = signal.butter(2, 0.1)
-    smoothed_coords = np.empty_like(interp_coords)
-    for i in range(3):
-        smoothed_coords[:, i] = signal.filtfilt(b, a, interp_coords[:, i])
-
     # Generate list of RigidTransform objects
     pose_list = []
-    for i in range(len(smoothed_coords)):
-        pose = RigidTransform(X_WG.rotation(), smoothed_coords[i])
+    for i in range(len(interp_coords)):
+        pose = RigidTransform(X_WG.rotation(), interp_coords[i])
         pose_list.append(pose)
 
     return pose_list
@@ -126,7 +119,7 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
     
 
 
-def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6"):
+def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6", arc_height=0.01):
     """
     Move the arm to a new location. If the arm is in contact with an object, stop moving.
     @param: X_WG (numpy array): Allegro wrapper with current robot state.
@@ -143,14 +136,15 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
     plant_context = plant.GetMyContextFromRoot(context)
     gripper = plant.GetBodyByName(frame)
     X_WG = plant.EvalBodyPoseInWorld(plant_context, gripper)
-    end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25)
+    end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=arc_height)
 
     X_WG_full = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
     trajectory = optimize_arm_movement(X_WG_full, station, end_effector_poses, frame=frame)
+
     arm_trajectory = trajectory[:, :7]
     all_contacts = set()
     for state_update in arm_trajectory:
-        new_state = station.GetInputPort("iiwa+allegro.desired_state").Eval(context)
+        new_state = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
         new_state[:len(state_update)] = state_update
         station.GetInputPort("iiwa+allegro.desired_state").FixValue(context, new_state)
         simulator_steps = 25

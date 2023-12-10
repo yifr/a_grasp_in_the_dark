@@ -1,8 +1,0 @@
-
-directives:
-- add_model:
-    name: table
-    file: "file:///home/aryan/Projects/Manipulation/a_grasp_in_the_dark/obj_sdfs/table.sdf"
-- add_model:
-    name: solid_box
-    file: "file:///home/aryan/Projects/Manipulation/a_grasp_in_the_dark/obj_sdfs/solid_box.sdf"
