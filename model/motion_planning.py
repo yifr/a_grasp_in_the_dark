@@ -113,8 +113,8 @@ def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_li
         pose = end_effector_poses[i]
         AddPositionConstraint(
                     ik,
-                    pose.translation(),
-                    pose.translation(),
+                    pose.translation() - np.array([0.01, 0.01, 0.01]),
+                    pose.translation() + np.array([0.01, 0.01, 0.01])
         )
 
         if frame == "hand_root":
@@ -123,7 +123,7 @@ def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_li
         prog.AddQuadraticErrorCost(np.identity(len(q_variables)), q_nominal, q_variables)
 
         result_found = False
-        for j in range(1000):
+        for j in range(100):
             if i == 0:
                 prog.SetInitialGuess(q_variables, q_nominal)
             else:

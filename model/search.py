@@ -40,7 +40,7 @@ import numpy as np
 
 
 def sample_new_target(past_points, bias_position=None, 
-                    angle_std = 0.1, dist_std = 0.1, reach_std = 0.1, object_radius=0.05):
+                    angle_std = 0.1, dist_std = 0.1, reach_std = 0.1, object_radius=0.05, table_w=0.5, table_l=0.5):
     """
         Proposes a new location to reach with the hand.
         
@@ -65,7 +65,9 @@ def sample_new_target(past_points, bias_position=None,
     while noisy_dist < object_radius:
         noisy_dist = np.random.normal(dist, dist_std)
     N = 100
-    pseudo_target = np.array([dist * 2 * np.cos(noisy_angle), dist * 2 * np.sin(noisy_angle)]) + past_points[-1]
+    max_x_move = np.min([dist * 2, table_w/2])
+    max_y_move = np.min([dist * 2, table_l/2])
+    pseudo_target = np.array([max_x_move * np.cos(noisy_angle), max_y_move * np.sin(noisy_angle)]) + past_points[-1]
     line_points = np.array([np.linspace(past_points[-1][0], pseudo_target[0], N), np.linspace(past_points[-1][1], pseudo_target[1], N)]).T
     noisy_target = np.array([noisy_dist * np.cos(noisy_angle), noisy_dist * np.sin(noisy_angle)]) + past_points[-1]
     probabilities = np.exp(-0.5 * ((line_points - noisy_target)**2 / reach_std**2).sum(axis=1))
