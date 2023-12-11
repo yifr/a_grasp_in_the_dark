@@ -26,7 +26,6 @@ def get_table_contact(X_WG, final_height=-0.05, num_knot_points=15):
     
     return p_list
 
-
 def get_contacts(station, context):
     """
     Get contact points from the station
@@ -36,7 +35,13 @@ def get_contacts(station, context):
     contact = station.GetOutputPort("contact_results").Eval(context)
     num_contacts = contact.num_point_pair_contacts()
     for i in range(num_contacts):
-        p_WC = contact.point_pair_contact_info(i).contact_point()
+        contact_point = contact.point_pair_contact_info(i)
+        bodyA = contact_point.bodyA_index()
+        bodyB = contact_point.bodyB_index()
+        # Filter out self-collisions
+        if int(bodyA) < 23 and int(bodyB) < 23:
+            continue
+        p_WC = contact_point.contact_point()
         contacts.append(p_WC)
 
     return np.array(contacts)
@@ -49,10 +54,10 @@ def evaluate_contact(p_WC, table_height=0, threshold=0.001):
     # find the min difference between z values
     p_WCs = np.array(list(p_WC))
     z_diff = np.max(p_WCs[:, 2])
-
+    point_idx = np.argmax(p_WCs[:, 2])
     if z_diff < table_height + threshold:
         object_touched = "table"
     else:
         object_touched = "object"
         
-    return object_touched
+    return object_touched, p_WCs[point_idx]

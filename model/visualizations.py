@@ -43,19 +43,19 @@ def plot_2d_search(p_WG, p_WCs, new_target, target_bias, p_W_brick,
     plt.colorbar(label='Probability')
 
     for p_WC in p_WCs:
-        plt.scatter(p_WC[1], p_WC[0], marker='x', color='red', label="Touched Points", s=100)
+        plt.scatter(p_WC[0], p_WC[1] * -1, marker='x', color='red', label="Touched Points", s=100)
 
-    plt.scatter(p_WG[1], p_WG[0], marker='o', color='blue', label='Current Gripper Position')
-    plt.scatter(new_target[1], new_target[0], marker='*', color='green', label='New Target', s=150)
-    plt.scatter(p_W_brick[1], p_W_brick[0], marker='s', color='gold', label='Brick', s=200)
+    plt.scatter(p_WG[0], p_WG[1] * -1, marker='o', color='blue', label='Current Gripper Position')
+    plt.scatter(new_target[0], new_target[1] * -1, marker='*', color='green', label='New Target', s=150)
+    plt.scatter(p_W_brick[0], p_W_brick[1] * -1, marker='s', color='gold', label='Brick', s=200)
 
     # Zip legend
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys(), loc=(1.25, 0.5))
 
-    plt.xlim(ymin, ymax)
-    plt.ylim(xmin, xmax)
+    plt.xlim(xmin, xmax)
+    plt.ylim(ymin * -1, ymax * -1)
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
     plt.title('Search Algorithm Visualization')

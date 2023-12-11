@@ -23,8 +23,8 @@ def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
         meshcat = StartMeshcat()
     
     if brick_location is None:
-        table_xmin = 0.55
-        table_xmax = 0.7
+        table_xmin = 0.4
+        table_xmax = 0.8
         table_ymin = -0.3
         table_ymax = 0.3
         x = np.random.uniform(table_xmin, table_xmax)

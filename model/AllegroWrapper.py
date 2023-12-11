@@ -142,3 +142,9 @@ class AllegroHand:
         new_state = self.get_state()
         new_state[7:len(allegro_state) + 7] = allegro_state
         self.set_state(new_state)
+
+    def set_explore_mode(self):
+        allegro_state = np.array([0, 0, 0, 0, 0.7, 1.16, 1.6, 1.7, 0., 1.3, 1.3, 1.3, 0, 1.61, 1.71, 0])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)

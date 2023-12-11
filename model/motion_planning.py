@@ -2,6 +2,7 @@ import numpy as np
 import copy
 from pydrake.all import (
     RigidTransform,
+    RotationMatrix,
     Solve,
 )
 from pydrake.trajectories import PiecewisePolynomial
@@ -9,7 +10,7 @@ from pydrake.multibody import inverse_kinematics
 from scipy import signal
 import contact
 
-def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25):
+def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25, rotate=None):
     """
     Linear interpolation between two 3D coordinates with adjustments for smoother motion
 
@@ -45,7 +46,11 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25):
     # Generate list of RigidTransform objects
     pose_list = []
     for i in range(len(interp_coords)):
-        pose = RigidTransform(X_WG.rotation(), interp_coords[i])
+        if rotate is None:
+            rotation = X_WG.rotation()
+        else:
+            rotation = X_WG.rotation().MakeXRotation(np.pi / 2).MakeYRotation(np.pi / 2)
+        pose = RigidTransform(rotation, interp_coords[i])
         pose_list.append(pose)
 
     return pose_list
@@ -86,6 +91,20 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
             p_AQ_upper=p_WG_upper,
         )
 
+    def AddOrientationConstraint(ik, R_WG, bounds):
+        """Add orientation constraint to the ik problem. Implements an inequality
+        constraint where the axis-angle difference between f_R(q) and R_WG must be
+        within bounds. Can be translated to:
+        ik.prog().AddBoundingBoxConstraint(angle_diff(f_R(q), R_WG), -bounds, bounds)
+        """
+        ik.AddOrientationConstraint(
+            frameAbar=world_frame,
+            R_AbarA=R_WG,
+            frameBbar=gripper_frame,
+            R_BbarB=RotationMatrix(),
+            theta_bound=bounds,
+        )
+
     for i in range(len(end_effector_poses)):
         ik = inverse_kinematics.InverseKinematics(plant)
         q_variables = ik.q()  # Get variables for MathematicalProgram
@@ -94,10 +113,13 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
         pose = end_effector_poses[i]
         AddPositionConstraint(
                     ik,
-                    pose.translation() - 0.1 * np.ones(3),
-                    pose.translation() + 0.1 * np.ones(3),
+                    pose.translation() - 0.05 * np.ones(3),
+                    pose.translation() + 0.05 * np.ones(3),
         )
-    
+
+        if frame == "hand_root":
+            AddOrientationConstraint(ik, pose.rotation(), 0.1)
+
         prog.AddQuadraticErrorCost(np.identity(len(q_variables)), q_nominal, q_variables)
         if i == 0:
             prog.SetInitialGuess(q_variables, q_nominal)
@@ -105,7 +127,7 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
             prog.SetInitialGuess(q_variables, q_knots[i-1])
 
         result_found = False
-        for i in range(1000):
+        for i in range(100):
             result = Solve(prog)
             if result.is_success():
                 result_found = True
@@ -120,7 +142,9 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
     
 
 
-def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6", arc_height=0.25):
+def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6", 
+                arc_height=0.25,
+                stop_on_contact=False):
     """
     Move the arm to a new location. If the arm is in contact with an object, stop moving.
     @param: X_WG (numpy array): Allegro wrapper with current robot state.
@@ -137,7 +161,12 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
     plant_context = plant.GetMyContextFromRoot(context)
     gripper = plant.GetBodyByName(frame)
     X_WG = plant.EvalBodyPoseInWorld(plant_context, gripper)
-    end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=arc_height)
+
+    if frame != "iiwa_link_6":
+        rotate = True
+    else:
+        rotate = False
+    end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=arc_height, rotate=rotate)
 
     X_WG_full = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
     trajectory = optimize_arm_movement(X_WG_full, station, end_effector_poses, frame=frame)
@@ -153,8 +182,16 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
             simulator.AdvanceTo(context.get_time() + time_interval / simulator_steps)
             # Check for contact
             current_contact = contact.get_contacts(station, context)
-            for p_WC in current_contact:
-                all_contacts.add(tuple(p_WC))
+            if len(current_contact) > 0:
+                for p_WC in current_contact:
+                    all_contacts.add(tuple(p_WC))
+                
+                obj_touched, p_W_objcontact = contact.evaluate_contact(all_contacts)
+                if obj_touched == "object":
+                    return obj_touched, current_contact, p_W_objcontact
 
-    obj_touched = contact.evaluate_contact(all_contacts)
-    return obj_touched, current_contact
+    if len(all_contacts) > 0:
+        obj_touched, p_W_objcontact = contact.evaluate_contact(all_contacts)
+        return obj_touched, current_contact, p_W_objcontact
+    else:
+        return None, all_contacts, None
