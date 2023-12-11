@@ -47,7 +47,7 @@ def get_contacts(station, context):
     return np.array(contacts)
 
 
-def evaluate_contact(p_WC, table_height=0, threshold=0.001):
+def evaluate_contact(p_WC, table_height=0, threshold=0.0001):
     """
     Determine if contact is likely an object or the table
     """

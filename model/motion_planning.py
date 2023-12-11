@@ -10,6 +10,7 @@ from pydrake.trajectories import PiecewisePolynomial
 from pydrake.multibody import inverse_kinematics
 from scipy.interpolate import CubicSpline
 import contact
+from AllegroWrapper import STATION_MAP, LINK_IDS
 
 def interpolate_locations(X_WG, p_WG_post, interp_steps=32, arc_height=0.25, rotate=None):
     """
@@ -26,9 +27,7 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=32, arc_height=0.25, rot
     """
     p_WG_pre = X_WG.translation()
 
-
     # Z-axis arc movement        
-    print(np.linalg.norm(p_WG_pre[2] - p_WG_post[2]))
     if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 0.1:
         # Time vector
         t = np.linspace(0, 1, interp_steps)
@@ -46,7 +45,7 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=32, arc_height=0.25, rot
         xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
         ys = np.linspace(p_WG_pre[1], p_WG_post[1], interp_steps)
         zs = np.linspace(p_WG_pre[2], p_WG_post[2], interp_steps)
-
+    
     # Generate list of RigidTransform objects
     pose_list = []
     for i in range(interp_steps):
@@ -61,8 +60,25 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=32, arc_height=0.25, rot
 
     return pose_list
 
+def add_finger_constraints(ik, station, context):
+    plant = station.GetSubsystemByName("plant")
+    plant_context = plant.GetMyContextFromRoot(context)
 
-def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_link_6"):
+    gripper_frame = plant.GetFrameByName("hand_root")
+    gripper_orientation = plant.EvalBodyPoseInWorld(plant_context,
+                                plant.GetBodyByName("hand_root")).rotation()
+    link_ids = LINK_IDS.values()
+    for link_id in link_ids:
+        ik.AddOrientationConstraint(
+            frameAbar=gripper_frame,
+            R_AbarA=gripper_orientation,
+            frameBbar=plant.GetFrameByName(link_id),
+            R_BbarB=RotationMatrix(),
+            theta_bound=np.pi/2,
+        )
+
+def optimize_arm_movement(q_current, station, context, end_effector_poses, frame="iiwa_link_6",
+                        freeze_fingers=False, position_tol=0.01):
     """Convert end-effector pose list to joint position list using series of
     InverseKinematics problems. Note that q is 9-dimensional because the last 2 dimensions
     contain gripper joints, but these should not matter to the constraints.
@@ -81,7 +97,7 @@ def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_li
     
     iiwa_initial = q_current[:7]
     gripper_initial = np.ones((23))
-    q_nominal = np.concatenate((iiwa_initial, gripper_initial))
+    q_nominal = q_current[:30]  # np.concatenate((iiwa_initial, gripper_initial))
     
     def AddPositionConstraint(ik, p_WG_lower, p_WG_upper):
         """Add position constraint to the ik problem. Implements an inequality
@@ -119,11 +135,14 @@ def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_li
         pose = end_effector_poses[i]
         AddPositionConstraint(
                     ik,
-                    pose.translation() - np.array([0.005, 0.005, 0.005]),
-                    pose.translation() + np.array([0.005, 0.005, 0.005])
+                    pose.translation() - position_tol,
+                    pose.translation() + position_tol
         )
+        
+        if freeze_fingers:
+            add_finger_constraints(ik, station, context)
 
-        if frame == "hand_root":
+        if frame == "hand_root" and not freeze_fingers:
             AddOrientationConstraint(ik, pose.rotation(), 0.2)
 
         prog.AddQuadraticErrorCost(np.identity(len(q_variables)), q_nominal, q_variables)
@@ -146,14 +165,17 @@ def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_li
         q_knots.append(result.GetSolution(q_variables))
     
     return np.array(q_knots)
-    
 
 
 def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6", 
                 arc_height=0.25,
                 stop_on_contact=False,
                 rotate=None,
-                state_update_len=7):
+                poses=None,
+                state_update_len=7,
+                freeze_fingers=False,
+                position_tol=0.01,
+                simulator_steps=25):
     """
     Move the arm to a new location. If the arm is in contact with an object, stop moving.
     @param: X_WG (numpy array): Allegro wrapper with current robot state.
@@ -175,10 +197,14 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
         rotate = True
     else:
         rotate = False
-    end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=arc_height, rotate=rotate)
-
+    if poses is None:
+        end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=arc_height, rotate=rotate)
+    else:
+        end_effector_poses = poses
     q_current = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
-    trajectory = optimize_arm_movement(q_current, station, end_effector_poses, frame=frame)
+    trajectory = optimize_arm_movement(q_current, station, context, end_effector_poses, frame=frame, 
+                                    freeze_fingers=freeze_fingers,
+                                    position_tol=position_tol)
 
     arm_trajectory = trajectory[:, :state_update_len]
     all_contacts = set()
@@ -186,7 +212,6 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
         new_state = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
         new_state[:len(state_update)] = state_update
         station.GetInputPort("iiwa+allegro.desired_state").FixValue(context, new_state)
-        simulator_steps = 25
         for i in range(simulator_steps):
             simulator.AdvanceTo(context.get_time() + time_interval / simulator_steps)
             # Check for contact
@@ -195,9 +220,10 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
                 for p_WC in current_contact:
                     all_contacts.add(tuple(p_WC))
                 
-                obj_touched, p_W_objcontact = contact.evaluate_contact(all_contacts)
-                if obj_touched == "object":
-                    return obj_touched, current_contact, p_W_objcontact
+                if i > simulator_steps // 10:
+                    obj_touched, p_W_objcontact = contact.evaluate_contact(all_contacts)
+                    if obj_touched == "object" and stop_on_contact:
+                        return obj_touched, current_contact, p_W_objcontact
 
     if len(all_contacts) > 0:
         obj_touched, p_W_objcontact = contact.evaluate_contact(all_contacts)

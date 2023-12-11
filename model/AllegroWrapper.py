@@ -35,6 +35,44 @@ from manipulation.scenarios import AddMultibodyTriad, MakeManipulationStation
 from manipulation.meshcat_utils import AddMeshcatTriad
 from pydrake.multibody import inverse_kinematics
 
+STATION_MAP = {
+                "index_revolute_z": 7,
+                "index_0": 8,
+                "index_1": 9,
+                "index_2": 10,
+                "thumb_revolute_z": 11,
+                "thumb_revolute_y": 12, 
+                "thumb_1": 13,
+                "thumb_2": 14,
+                "middle_revolute_z": 15,
+                "middle_0": 16,
+                "middle_1": 17,
+                "middle_2": 18,
+                "pinky_revolute_z": 19,
+                "pinky_0": 20,
+                "pinky_1": 21,
+                "pinky_2": 22
+            }
+
+LINK_IDS = {
+            "index_revolute_z": "link_0",
+            "index_0": "link_1",
+            "index_1": "link_2",
+            "index_2": "link_3",
+            "middle_revolute_z": "link_4",
+            "middle_0": "link_5",
+            "middle_1": "link_6",
+            "middle_2": "link_7",
+            "pinky_revolute_z": "link_8",
+            "pinky_0": "link_9",
+            "pinky_1": "link_10",
+            "pinky_2": "link_11",
+            "thumb_revolute_z": "link_12",
+            "thumb_revolute_y": "link_13",
+            "thumb_1": "link_14",
+            "thumb_2": "link_15",
+        }
+
 class AllegroHand:
     def __init__(self, station, context):
         self.station = station
@@ -136,15 +174,20 @@ class AllegroHand:
         station.GetInputPort("iiwa+allegro.desired_state").FixValue(context, x0)
         simulator.AdvanceTo(context.get_time() + 1)
 
+    def open_hand(self):
+        allegro_state = np.array([0] * 23)
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
 
     def close_hand(self):
-        allegro_state = np.array([-0.1, 1.5, 1.5, -.4, 1.3, 1., 0.7, 0.7, 0, 1.5, 1.5, -.4, 0.1, 1.5, 1.5, -.4])
+        allegro_state = np.array([-0.1, 1.5, 1.5, -.4, 1.3, 1.4, 1.2, 0.5, 0, 1.5, 1.5, -.4, 0.1, 1.5, 1.5, -.4])
         new_state = self.get_state()
         new_state[7:len(allegro_state) + 7] = allegro_state
         self.set_state(new_state)
 
     def tighten_hand(self):
-        allegro_state = np.array([-0.1, 1.6, 1.6, -.4, 1.4, 1.1, 0.8, 0.8, 0, 1.6, 1.6, -.4, 0.1, 1.6, 1.6, -.4])
+        allegro_state = np.array([-0.1, 1.6, 1.6, -.4, 1.4, 1.4, 1.3, 0.8, 0, 1.6, 1.6, -.4, 0.1, 1.6, 1.6, -.4])
         new_state = self.get_state()
         new_state[7:len(allegro_state) + 7] = allegro_state
         self.set_state(new_state)
