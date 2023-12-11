@@ -3,14 +3,15 @@ import copy
 from pydrake.all import (
     RigidTransform,
     RotationMatrix,
+    RollPitchYaw,
     Solve,
 )
 from pydrake.trajectories import PiecewisePolynomial
 from pydrake.multibody import inverse_kinematics
-from scipy import signal
+from scipy.interpolate import CubicSpline
 import contact
 
-def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25, rotate=None):
+def interpolate_locations(X_WG, p_WG_post, interp_steps=32, arc_height=0.25, rotate=None):
     """
     Linear interpolation between two 3D coordinates with adjustments for smoother motion
 
@@ -24,33 +25,38 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25, rot
         coords: RigidTransform of the robot at each interpolation step
     """
     p_WG_pre = X_WG.translation()
-    print(p_WG_pre, p_WG_post)
 
-    if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 0.5:
-        # If the z-values are practically the same, move in a square wave
-        # where the robot
-        xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
-        ys = np.linspace(p_WG_pre[1], p_WG_post[1], interp_steps)
-        zs_0 = np.linspace(p_WG_pre[2], arc_height, interp_steps // 2)
-        zs_1 = np.linspace(arc_height, p_WG_post[2], interp_steps // 2)
-        zs = np.concatenate((zs_0, zs_1))
+
+    # Z-axis arc movement        
+    print(np.linalg.norm(p_WG_pre[2] - p_WG_post[2]))
+    if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 0.1:
+        # Time vector
+        t = np.linspace(0, 1, interp_steps)
+
+        # Interpolate X and Y linearly
+        x_spline = CubicSpline([0, 1], [p_WG_pre[0], p_WG_post[0]])
+        y_spline = CubicSpline([0, 1], [p_WG_pre[1], p_WG_post[1]])
+        z_spline = CubicSpline([0, 0.5, 1], [p_WG_pre[2], arc_height, p_WG_post[2]])
+
+        # Apply splines to time vector
+        xs = x_spline(t)
+        ys = y_spline(t)
+        zs = z_spline(t)
     else:
-        # Otherwise, use linear interpolation
         xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
         ys = np.linspace(p_WG_pre[1], p_WG_post[1], interp_steps)
         zs = np.linspace(p_WG_pre[2], p_WG_post[2], interp_steps)
 
-    # Combine interpolated coordinates
-    interp_coords = np.vstack((xs, ys, zs)).T
-
     # Generate list of RigidTransform objects
     pose_list = []
-    for i in range(len(interp_coords)):
+    for i in range(interp_steps):
         if rotate is None:
             rotation = X_WG.rotation()
         else:
-            rotation = X_WG.rotation().MakeXRotation(np.pi / 2).MakeYRotation(np.pi / 2)
-        pose = RigidTransform(rotation, interp_coords[i])
+            # Adjust rotation as needed
+            rotation = RotationMatrix().MakeXRotation(np.pi / 2).MakeYRotation(np.pi / 2)
+        
+        pose = RigidTransform(rotation, np.array([xs[i], ys[i], zs[i]]))
         pose_list.append(pose)
 
     return pose_list
@@ -113,8 +119,8 @@ def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_li
         pose = end_effector_poses[i]
         AddPositionConstraint(
                     ik,
-                    pose.translation() - np.array([0.01, 0.01, 0.01]),
-                    pose.translation() + np.array([0.01, 0.01, 0.01])
+                    pose.translation() - np.array([0.005, 0.005, 0.005]),
+                    pose.translation() + np.array([0.005, 0.005, 0.005])
         )
 
         if frame == "hand_root":
@@ -145,7 +151,9 @@ def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_li
 
 def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6", 
                 arc_height=0.25,
-                stop_on_contact=False):
+                stop_on_contact=False,
+                rotate=None,
+                state_update_len=7):
     """
     Move the arm to a new location. If the arm is in contact with an object, stop moving.
     @param: X_WG (numpy array): Allegro wrapper with current robot state.
@@ -172,7 +180,7 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
     q_current = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
     trajectory = optimize_arm_movement(q_current, station, end_effector_poses, frame=frame)
 
-    arm_trajectory = trajectory[:, :7]
+    arm_trajectory = trajectory[:, :state_update_len]
     all_contacts = set()
     for state_update in arm_trajectory:
         new_state = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
@@ -196,3 +204,4 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
         return obj_touched, current_contact, p_W_objcontact
     else:
         return None, all_contacts, None
+
