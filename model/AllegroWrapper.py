@@ -143,8 +143,72 @@ class AllegroHand:
         new_state[7:len(allegro_state) + 7] = allegro_state
         self.set_state(new_state)
 
+    def tighten_hand(self):
+        allegro_state = np.array([-0.1, 1.6, 1.6, -.4, 1.4, 1.1, 0.8, 0.8, 0, 1.6, 1.6, -.4, 0.1, 1.6, 1.6, -.4])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+
     def set_explore_mode(self):
         allegro_state = np.array([0, 0, 0, 0, 0.7, 1.16, 1.6, 1.7, 0., 1.3, 1.3, 1.3, 0, 1.61, 1.71, 0])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+
+    
+    def moonwalk_index_lead(self):
+        # Index finger pushed back
+        allegro_state = np.array([0, 0, 0, -.1, 0.7, 1.16, 1.6, 1.7, 0., 0, 0, 0, 0, 1.61, 1.71, 0])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+
+    def moonwalk_index_back(self):
+        # Index finger pushed back
+        allegro_state = np.array([0, 1.2, 1.1, .4, 0.7, 1.16, 1.6, 1.7, 0., 0, 0, 0, -.2, 1.61, 1.71, 0])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+
+
+    def moonwalk_pinky_lead(self):
+        # Pinky finger pushed back
+        allegro_state = np.array([0, 0, 0, 0, 0.7, 1.16, 1.6, 1.7, 0., 0, 0, 0, 0, 0, 0, -.1])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+
+    def moonwalk_pinky_back(self):
+        # Pinky finger pushed back
+        allegro_state = np.array([0, 0, 0, 0, 0.7, 1.16, 1.6, 1.7, 0., 0, 0, 0, 0, 1.61, 1.71, 1.1])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+        
+    def moonwalk_middle_lead(self):
+        # Middle finger pushed back
+        allegro_state = np.array([0, 0, 0, 0, 0.7, 1.16, 1.6, 1.7, 0., 0, 0, 0, 0, 1.61, 1.71, 0])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+
+    def moonwalk_middle_back(self):
+        # Middle finger pushed back
+        allegro_state = np.array([0, 0, 0, 0, 0.7, 1., 1.6, 1.7, 0., 1.2, 1.2, 1.2, 0, 0, 0, 0])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+
+    def moonwalk_thumb_lead(self):
+        # Thumb pushed back
+        allegro_state = np.array([0, 0, 0, 0, 0.7, 0, 1.6, 1.7, 0., 0, 0, 0, 0, 1.61, 1.71, 0])
+        new_state = self.get_state()
+        new_state[7:len(allegro_state) + 7] = allegro_state
+        self.set_state(new_state)
+    
+    def moonwalk_thumb_back(self):
+        # Thumb pushed back
+        allegro_state = np.array([0, 0, 0, 0, 0, 1.0, 1.6, 1.7, 0., 0, 0, 0, 0, 1.61, 1.71, 0])
         new_state = self.get_state()
         new_state[7:len(allegro_state) + 7] = allegro_state
         self.set_state(new_state)
