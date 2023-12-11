@@ -9,7 +9,7 @@ from pydrake.multibody import inverse_kinematics
 from scipy import signal
 import contact
 
-def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.01):
+def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25):
     """
     Linear interpolation between two 3D coordinates with adjustments for smoother motion
 
@@ -23,8 +23,9 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.01):
         coords: RigidTransform of the robot at each interpolation step
     """
     p_WG_pre = X_WG.translation()
+    print(p_WG_pre, p_WG_post)
 
-    if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 0.1:
+    if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 1:
         # If the z-values are practically the same, move in a square wave
         # where the robot
         xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
@@ -66,11 +67,11 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
     plant = station.GetSubsystemByName("plant")
     world_frame = plant.world_frame()
     gripper_frame = plant.GetFrameByName(frame)
-
+    
     iiwa_initial = X_WG[:7]
     gripper_initial = np.ones((23))
     q_nominal = np.concatenate((iiwa_initial, gripper_initial))
-
+    
     def AddPositionConstraint(ik, p_WG_lower, p_WG_upper):
         """Add position constraint to the ik problem. Implements an inequality
         constraint where f_p(q) must lie between p_WG_lower and p_WG_upper. Can be
@@ -93,8 +94,8 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
         pose = end_effector_poses[i]
         AddPositionConstraint(
                     ik,
-                    pose.translation() - 0.01 * np.ones(3),
-                    pose.translation() + 0.01 * np.ones(3),
+                    pose.translation() - 0.1 * np.ones(3),
+                    pose.translation() + 0.1 * np.ones(3),
         )
     
         prog.AddQuadraticErrorCost(np.identity(len(q_variables)), q_nominal, q_variables)
@@ -104,7 +105,7 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
             prog.SetInitialGuess(q_variables, q_knots[i-1])
 
         result_found = False
-        for i in range(100):
+        for i in range(1000):
             result = Solve(prog)
             if result.is_success():
                 result_found = True
@@ -114,12 +115,12 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
             raise RuntimeError("Inverse kinematics failed.")
 
         q_knots.append(result.GetSolution(q_variables))
-
+    
     return np.array(q_knots)
     
 
 
-def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6", arc_height=0.01):
+def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="iiwa_link_6", arc_height=0.25):
     """
     Move the arm to a new location. If the arm is in contact with an object, stop moving.
     @param: X_WG (numpy array): Allegro wrapper with current robot state.

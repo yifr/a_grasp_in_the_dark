@@ -23,7 +23,7 @@ def get_table_contact(X_WG, final_height=-0.05, num_knot_points=15):
     p_list = []
     for p_WG in positions:
         p_list.append(RigidTransform(R_WG, p_WG))
-
+    
     return p_list
 
 

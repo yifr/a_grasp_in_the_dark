@@ -24,7 +24,7 @@ def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
     
     if brick_location is None:
         table_xmin = 0.55
-        table_xmax = 0.75
+        table_xmax = 0.7
         table_ymin = -0.3
         table_ymax = 0.3
         x = np.random.uniform(table_xmin, table_xmax)
@@ -67,7 +67,7 @@ def init_scenario(brick_location=None, brick_rotation=None, meshcat=None):
             child: allegro::hand_root
             X_PC:
                 translation: [0, 0, 0.05]
-                rotation: !Rpy { deg: [0, 0, 0]}
+                rotation: !Rpy { deg: [0, -90, 0]}
         # And now the environment:
         - add_model:
             name: foam_brick

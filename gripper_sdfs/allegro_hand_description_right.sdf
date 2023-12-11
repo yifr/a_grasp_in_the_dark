@@ -46,6 +46,14 @@
             <size>0.0408 0.113 0.095</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>3</mu>
+              <mu2>3</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="hand_root_fixed_joint_lump__palm_link_visual">
         <pose>0 0 0.095 0 0 0</pose>
@@ -77,6 +85,14 @@
             <size>0.0196 0.0275 0.0164</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_0_visual">
         <geometry>
@@ -95,10 +111,10 @@
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
-          <effort>0.7</effort>
+          <effort>1.7</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -122,6 +138,14 @@
             <size>0.0196 0.0275 0.054</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_1_visual">
         <geometry>
@@ -140,10 +164,10 @@
         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -167,6 +191,14 @@
             <size>0.0196 0.0275 0.0384</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_2_visual">
         <geometry>
@@ -185,10 +217,10 @@
         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -212,6 +244,14 @@
             <size>0.0196 0.0275 0.0267</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <collision name="link_3_tip_collision_1">
         <pose>0 0 0.0267 0 0 0</pose>
@@ -220,6 +260,14 @@
             <radius>0.012</radius>
           </sphere>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_3_visual">
         <geometry>
@@ -247,10 +295,10 @@
         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -274,6 +322,14 @@
             <size>0.0358 0.034 0.0455</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_12_visual">
         <geometry>
@@ -292,10 +348,10 @@
         <limit>
           <lower>0.263</lower>
           <upper>1.396</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -339,10 +395,10 @@
         <limit>
           <lower>-0.105</lower>
           <upper>1.163</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -366,6 +422,14 @@
             <size>0.0196 0.0275 0.0514</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_14_visual">
         <geometry>
@@ -384,10 +448,10 @@
         <limit>
           <lower>-0.189</lower>
           <upper>1.644</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -420,6 +484,14 @@
             <radius>0.012</radius>
           </sphere>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_15_visual">
         <geometry>
@@ -447,10 +519,10 @@
         <limit>
           <lower>-0.162</lower>
           <upper>1.719</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -474,6 +546,14 @@
             <size>0.0196 0.0275 0.0164</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_4_visual">
         <geometry>
@@ -492,10 +572,10 @@
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -519,6 +599,14 @@
             <size>0.0196 0.0275 0.054</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_5_visual">
         <geometry>
@@ -537,10 +625,10 @@
         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -564,6 +652,14 @@
             <size>0.0196 0.0275 0.0384</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_6_visual">
         <geometry>
@@ -582,10 +678,10 @@
         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -609,6 +705,14 @@
             <size>0.0196 0.0275 0.0267</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <collision name="link_7_tip_collision_1">
         <pose>0 0 0.0267 0 0 0</pose>
@@ -617,6 +721,14 @@
             <radius>0.012</radius>
           </sphere>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_7_visual">
         <geometry>
@@ -644,10 +756,10 @@
         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -671,6 +783,14 @@
             <size>0.0196 0.0275 0.0164</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_8_visual">
         <geometry>
@@ -689,10 +809,10 @@
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>
@@ -716,6 +836,14 @@
             <size>0.0196 0.0275 0.054</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_9_visual">
         <geometry>
@@ -734,10 +862,10 @@
         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>1.5e</damping>
         </dynamics>
       </axis>
     </joint>
@@ -761,6 +889,14 @@
             <size>0.0196 0.0275 0.0384</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_10_visual">
         <geometry>
@@ -779,10 +915,10 @@
         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>1.5e</damping>
         </dynamics>
       </axis>
     </joint>
@@ -806,6 +942,14 @@
             <size>0.0196 0.0275 0.0267</size>
           </box>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <collision name="link_11_tip_collision_1">
         <pose>0 0 0.0267 0 0 0</pose>
@@ -814,6 +958,14 @@
             <radius>0.012</radius>
           </sphere>
         </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.25</mu>
+              <mu2>1.</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="link_11_visual">
         <geometry>
@@ -841,10 +993,10 @@
         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
-          <effort>0.7</effort>
+          <effort>1.</effort>
         </limit>
         <dynamics>
-          <damping>1.5e-2</damping>
+          <damping>.7</damping>
         </dynamics>
       </axis>
     </joint>

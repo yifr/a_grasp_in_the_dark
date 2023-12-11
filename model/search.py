@@ -41,7 +41,7 @@ def update_target_bias(previous_contacts, initial_bias):
 
 
 def sample_new_target(p_WG, p_WCs, target_bias=None, 
-                    xmin=0.4, xmax=0.75, ymin=-0.35, ymax=0.35, 
+                    xmin=0.45, xmax=0.75, ymin=-0.3, ymax=0.3, 
                     grid_size=20,
                     object_area=0.05):
     """

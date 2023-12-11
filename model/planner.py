@@ -89,10 +89,21 @@ class Planner(LeafSystem):
         """
         Update should update the state of the planner.
         """
-        pass
+        mode = context.get_abstract_state(self._mode_index).get_value()
+        if mode == PlannerState.SEARCHING:
+            mode_update = self.get_input_port(self._contact_results_index).Eval(context)
+            if mode_update == PlannerState.INVESTIGATE:
+                self.Investigate(context, output)
+            elif mode_update == PlannerState.GRASPING:
+                self.Pick(context, output)
+            elif mode_update == PlannerState.GO_HOME:
+                self.GoHome(context, output)
+            else:
+                # We're still in search mode. Continue searching.
+                self.Search(context, output)
+                
 
     def Search(self, context, output):
-        pass
 
 
     def Investigate(self, context, output):
