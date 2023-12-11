@@ -26,7 +26,7 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25, rot
     p_WG_pre = X_WG.translation()
     print(p_WG_pre, p_WG_post)
 
-    if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 1:
+    if np.linalg.norm(p_WG_pre[2] - p_WG_post[2]) < 0.5:
         # If the z-values are practically the same, move in a square wave
         # where the robot
         xs = np.linspace(p_WG_pre[0], p_WG_post[0], interp_steps)
@@ -56,7 +56,7 @@ def interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=0.25, rot
     return pose_list
 
 
-def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"):
+def optimize_arm_movement(q_current, station, end_effector_poses, frame="iiwa_link_6"):
     """Convert end-effector pose list to joint position list using series of
     InverseKinematics problems. Note that q is 9-dimensional because the last 2 dimensions
     contain gripper joints, but these should not matter to the constraints.
@@ -73,7 +73,7 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
     world_frame = plant.world_frame()
     gripper_frame = plant.GetFrameByName(frame)
     
-    iiwa_initial = X_WG[:7]
+    iiwa_initial = q_current[:7]
     gripper_initial = np.ones((23))
     q_nominal = np.concatenate((iiwa_initial, gripper_initial))
     
@@ -113,21 +113,22 @@ def optimize_arm_movement(X_WG, station, end_effector_poses, frame="iiwa_link_6"
         pose = end_effector_poses[i]
         AddPositionConstraint(
                     ik,
-                    pose.translation() - 0.05 * np.ones(3),
-                    pose.translation() + 0.05 * np.ones(3),
+                    pose.translation(),
+                    pose.translation(),
         )
 
         if frame == "hand_root":
-            AddOrientationConstraint(ik, pose.rotation(), 0.1)
+            AddOrientationConstraint(ik, pose.rotation(), 0.2)
 
         prog.AddQuadraticErrorCost(np.identity(len(q_variables)), q_nominal, q_variables)
-        if i == 0:
-            prog.SetInitialGuess(q_variables, q_nominal)
-        else:
-            prog.SetInitialGuess(q_variables, q_knots[i-1])
 
         result_found = False
-        for i in range(100):
+        for j in range(1000):
+            if i == 0:
+                prog.SetInitialGuess(q_variables, q_nominal)
+            else:
+                prog.SetInitialGuess(q_variables, q_knots[i-1])
+
             result = Solve(prog)
             if result.is_success():
                 result_found = True
@@ -168,8 +169,8 @@ def move_arm(p_WG_post, simulator, station, context, time_interval=0.5, frame="i
         rotate = False
     end_effector_poses = interpolate_locations(X_WG, p_WG_post, interp_steps=16, arc_height=arc_height, rotate=rotate)
 
-    X_WG_full = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
-    trajectory = optimize_arm_movement(X_WG_full, station, end_effector_poses, frame=frame)
+    q_current = station.GetOutputPort("iiwa+allegro.state_estimated").Eval(context)
+    trajectory = optimize_arm_movement(q_current, station, end_effector_poses, frame=frame)
 
     arm_trajectory = trajectory[:, :7]
     all_contacts = set()
